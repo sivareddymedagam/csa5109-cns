@@ -1,0 +1,122 @@
+def apply_permutation(input_text, permutation):
+    return ''.join(input_text[i] for i in permutation)
+
+def xor_binary_strings(a, b):
+    return ''.join('1' if x != y else '0' for x, y in zip(a, b))
+
+def generate_subkeys(key):
+    key_permutation_1 = [2, 4, 1, 6, 3, 9, 0, 8, 7, 5]
+    key_permutation_2 = [5, 2, 6, 3, 7, 4, 9, 8]
+
+    # Initial permutation
+    permuted_key = apply_permutation(key, key_permutation_1)
+
+    # Split the key into two halves
+    left_half = permuted_key[:len(permuted_key)//2]
+    right_half = permuted_key[len(permuted_key)//2:]
+
+    # Circular left shift for each half
+    left_half = left_half[1:] + left_half[0]
+    right_half = right_half[1:] + right_half[0]
+
+    # Combine and apply the second permutation
+    combined_halves = left_half + right_half
+    subkey_1 = apply_permutation(combined_halves, key_permutation_2)
+
+    # Perform another circular left shift for each half
+    left_half = left_half[2:] + left_half[:2]
+    right_half = right_half[2:] + right_half[:2]
+
+    # Combine and apply the second permutation again
+    combined_halves = left_half + right_half
+    subkey_2 = apply_permutation(combined_halves, key_permutation_2)
+
+    return subkey_1, subkey_2
+
+def encrypt_block(plaintext_block, key, counter):
+    subkey_1, subkey_2 = generate_subkeys(key)
+
+    # Counter
+    counter_binary = format(counter, '08b')
+
+    # Initial permutation for counter
+    counter_permuted = apply_permutation(counter_binary, [2, 4, 6, 5, 7, 3, 1, 0])
+
+    # XOR counter with plaintext
+    xor_result = xor_binary_strings(plaintext_block, counter_permuted)
+
+    # Initial permutation for plaintext
+    permuted_text = apply_permutation(xor_result, [1, 5, 2, 0, 3, 7, 4, 6])
+
+    # Split into left and right halves
+    left_half = permuted_text[:len(permuted_text)//2]
+    right_half = permuted_text[len(permuted_text)//2:]
+
+    # Apply S-DES Feistel Network
+    expanded_right = apply_permutation(right_half, [3, 0, 1, 2, 1, 2, 3, 0])
+    xor_result = xor_binary_strings(expanded_right, subkey_1)
+    s_box_output = ''.join(apply_s_box(xor_result[i:i+4], s_box[i]) for i in range(0, len(xor_result), 4))
+    permuted_output = apply_permutation(s_box_output, [1, 3, 2, 0])
+    feistel_output = xor_binary_strings(left_half, permuted_output)
+
+    # Swap left and right halves
+    left_half, right_half = right_half, feistel_output
+
+    # Apply second round of Feistel Network
+    expanded_right = apply_permutation(right_half, [3, 0, 1, 2, 1, 2, 3, 0])
+    xor_result = xor_binary_strings(expanded_right, subkey_2)
+    s_box_output = ''.join(apply_s_box(xor_result[i:i+4], s_box[i]) for i in range(0, len(xor_result), 4))
+    permuted_output = apply_permutation(s_box_output, [1, 3, 2, 0])
+    feistel_output = xor_binary_strings(left_half, permuted_output)
+
+    # Final permutation
+    ciphertext_block = apply_permutation(feistel_output, [4, 0, 6, 1, 7, 3, 5, 2])
+
+    return ciphertext_block
+
+def decrypt_block(ciphertext_block, key, counter):
+    subkey_1, subkey_2 = generate_subkeys(key)
+
+    # Counter
+    counter_binary = format(counter, '08b')
+
+    # Initial permutation for counter
+    counter_permuted = apply_permutation(counter_binary, [2, 4, 6, 5, 7, 3, 1, 0])
+
+    # Initial permutation for ciphertext
+    permuted_text = apply_permutation(ciphertext_block, [1, 5, 2, 0, 3, 7, 4, 6])
+
+    # Split into left and right halves
+    left_half = permuted_text[:len(permuted_text)//2]
+    right_half = permuted_text[len(permuted_text)//2:]
+
+    # Apply S-DES Feistel Network (reverse order of subkeys)
+    expanded_right = apply_permutation(right_half, [3, 0, 1, 2, 1, 2, 3, 0])
+    xor_result = xor_binary_strings(expanded_right, subkey_2)
+    s_box_output = ''.join(apply_s_box(xor_result[i:i+4], s_box[i]) for i in range(0, len(xor_result), 4))
+    permuted_output = apply_permutation(s_box_output, [1, 3, 2, 0])
+    feistel_output = xor_binary_strings(left_half, permuted_output)
+
+    # Swap left and right halves
+    left_half, right_half = right_half, feistel_output
+
+    # Apply second round of Feistel Network (reverse order of subkeys)
+    expanded_right = apply_permutation(right_half, [3, 0, 1, 2, 1, 2, 3, 0])
+    xor_result = xor_binary_strings(expanded_right, subkey_1)
+    s_box_output = ''.join(apply_s_box(xor_result[i:i+4], s_box[i]) for i in range(0, len(xor_result), 4))
+    permuted_output = apply_permutation(s_box_output, [1, 3, 2, 0])
+    feistel_output = xor_binary_strings(left_half, permuted_output)
+
+    # Final permutation
+    decrypted_block = apply_permutation(feistel_output, [4, 0, 6, 1, 7, 3, 5, 2])
+
+    # XOR counter with plaintext
+    plaintext_block = xor_binary_strings(decrypted_block, counter_permuted)
+
+    return plaintext_block
+
+# Test data
+key = "0111111101"
+plaintext = "000000010000001000000100"
+counter = 0
+expected_ciphertext = "001110
