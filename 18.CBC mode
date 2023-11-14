@@ -1,0 +1,49 @@
+from Crypto.Cipher import DES3, AES
+from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
+
+def encrypt_cbc_3des(plaintext, key):
+    # Generate a random initialization vector (IV)
+    iv = get_random_bytes(8)
+
+    # Create a 3DES cipher object
+    cipher = DES3.new(key, DES3.MODE_CBC, iv)
+
+    # Pad the plaintext to a multiple of 8 bytes (block size)
+    plaintext_padded = pad(plaintext.encode('utf-8'), 8)
+
+    # Encrypt the padded plaintext
+    ciphertext = cipher.encrypt(plaintext_padded)
+
+    # Return the IV and ciphertext
+    return iv + ciphertext
+
+def encrypt_cbc_aes(plaintext, key):
+    # Generate a random initialization vector (IV)
+    iv = get_random_bytes(16)
+
+    # Create an AES cipher object
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+
+    # Pad the plaintext to a multiple of 16 bytes (block size)
+    plaintext_padded = pad(plaintext.encode('utf-8'), 16)
+
+    # Encrypt the padded plaintext
+    ciphertext = cipher.encrypt(plaintext_padded)
+
+    # Return the IV and ciphertext
+    return iv + ciphertext
+
+# Example usage for 3DES
+plaintext_3des = "Hello, this is a secret message."
+key_3des = get_random_bytes(24)  # 24 bytes for 3DES key
+
+encrypted_data_3des = encrypt_cbc_3des(plaintext_3des, key_3des)
+print("Encrypted data (3DES):", encrypted_data_3des.hex())
+
+# Example usage for AES
+plaintext_aes = "Hello, this is a secret message."
+key_aes = get_random_bytes(32)  # 32 bytes for AES-256 key
+
+encrypted_data_aes = encrypt_cbc_aes(plaintext_aes, key_aes)
+print("Encrypted data (AES):", encrypted_data_aes.hex())
