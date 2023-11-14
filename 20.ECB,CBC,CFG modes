@@ -1,0 +1,77 @@
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Util.strxor import strxor
+
+def encrypt_ecb(plaintext, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    ciphertext = cipher.encrypt(pad(plaintext.encode('utf-8'), AES.block_size))
+    return ciphertext
+
+def decrypt_ecb(ciphertext, key):
+    cipher = AES.new(key, AES.MODE_ECB)
+    plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
+    return plaintext.decode('utf-8')
+
+def encrypt_cbc(plaintext, key, iv):
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    ciphertext = cipher.encrypt(pad(plaintext.encode('utf-8'), AES.block_size))
+    return ciphertext
+
+def decrypt_cbc(ciphertext, key, iv):
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
+    return plaintext.decode('utf-8')
+
+def encrypt_cfb(plaintext, key, iv, segment_size):
+    cipher = AES.new(key, AES.MODE_CFB, iv, segment_size=segment_size)
+    ciphertext = cipher.encrypt(pad(plaintext.encode('utf-8'), segment_size))
+    return ciphertext
+
+def decrypt_cfb(ciphertext, key, iv, segment_size):
+    cipher = AES.new(key, AES.MODE_CFB, iv, segment_size=segment_size)
+    plaintext = unpad(cipher.decrypt(ciphertext), segment_size)
+    return plaintext.decode('utf-8')
+
+def add_padding(plaintext, block_size):
+    # Add padding to the plaintext
+    padding_length = block_size - (len(plaintext) % block_size)
+    padding = b'\x80' + b'\x00' * (padding_length - 1)
+    return plaintext + padding
+
+# Key and Initialization Vector (IV) generation
+key = get_random_bytes(16)
+iv = get_random_bytes(16)
+segment_size = 8  # CFB segment size
+
+# Example plaintext
+plaintext = "This is a test message for ECB, CBC, and CFB modes."
+
+# Add padding to the plaintext
+padded_plaintext = add_padding(plaintext, AES.block_size)
+
+# Encrypt and decrypt in ECB mode
+ciphertext_ecb = encrypt_ecb(padded_plaintext, key)
+decrypted_text_ecb = decrypt_ecb(ciphertext_ecb, key)
+
+# Encrypt and decrypt in CBC mode
+ciphertext_cbc = encrypt_cbc(padded_plaintext, key, iv)
+decrypted_text_cbc = decrypt_cbc(ciphertext_cbc, key, iv)
+
+# Encrypt and decrypt in CFB mode
+ciphertext_cfb = encrypt_cfb(padded_plaintext, key, iv, segment_size)
+decrypted_text_cfb = decrypt_cfb(ciphertext_cfb, key, iv, segment_size)
+
+# Display results
+print("Original Plaintext:", plaintext)
+print("\nECB Mode:")
+print("Ciphertext:", ciphertext_ecb.hex())
+print("Decrypted Text:", decrypted_text_ecb)
+
+print("\nCBC Mode:")
+print("Ciphertext:", ciphertext_cbc.hex())
+print("Decrypted Text:", decrypted_text_cbc)
+
+print("\nCFB Mode:")
+print("Ciphertext:", ciphertext_cfb.hex())
+print("Decrypted Text:", decrypted_text_cfb)
