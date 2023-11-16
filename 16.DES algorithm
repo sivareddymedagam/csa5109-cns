@@ -1,0 +1,53 @@
+#include <stdio.h>
+#include <stdint.h>
+
+typedef uint64_t block;
+
+// Function to perform the initial permutation (IP)
+block initialPermutation(block input) {
+    // Replace with the actual IP permutation
+    return input;
+}
+
+// Function to perform the final permutation (FP)
+block finalPermutation(block input) {
+    // Replace with the actual FP permutation
+    return input;
+}
+
+// Function to perform a single round of DES
+block desRound(block input, block key) {
+    // Replace with the actual DES round function
+    return input;
+}
+
+// Function to generate the 16 subkeys (K1, K2, ..., K16)
+void generateSubkeys(block key, block subkeys[16]) {
+    // Replace with the actual key generation algorithm
+}
+
+// Function to perform DES decryption
+block desDecrypt(block ciphertext, block subkeys[16]) {
+    block temp = initialPermutation(ciphertext);
+
+    for (int i = 15; i >= 0; i--) {
+        temp = desRound(temp, subkeys[i]);
+    }
+
+    return finalPermutation(temp);
+}
+
+int main() {
+    // Example usage
+    block key = 0x133457799BBCDFF1; // 64-bit key
+    block ciphertext = 0x85E813540F0AB405; // Example ciphertext
+
+    block subkeys[16];
+    generateSubkeys(key, subkeys);
+
+    block plaintext = desDecrypt(ciphertext, subkeys);
+
+    printf("Decrypted plaintext: %016llx\n", plaintext);
+
+    return 0;
+}
